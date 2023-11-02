@@ -129,7 +129,6 @@ int main(int argc, char* argv[]) {
     pipe(pipefd);
 
     if (!fork()) {
-        // Child process: Execute column command
         int fd = open("list.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
         dup2(fd, 1);
         dup2(pipefd[0], 0); // Connect the read end of the pipe to stdin
@@ -140,8 +139,9 @@ int main(int argc, char* argv[]) {
         execvp("column", args);
         perror("execvp");
         exit(1);
-    } else {
-        // Parent process: Generate output and write to the pipe
+
+    } 
+    else{
         close(pipefd[0]); // Close the read end of the pipe
 
         // Redirect stdout to the write end of the pipe
@@ -160,7 +160,7 @@ int main(int argc, char* argv[]) {
         DIR* drc = opendir(directory);
         struct dirent* file = (struct dirent*)(malloc(sizeof(struct dirent)));
         int sum = 0;
-
+        
         while ((file = readdir(drc)) != NULL) {
             if (file->d_name[0] == '.')
                 continue;
@@ -171,17 +171,25 @@ int main(int argc, char* argv[]) {
                 perror("statError");
                 exit(1);
             }
-
-            // Output file attributes to be piped to 'column'
-            // You can replace this section with your functions or the rest of your code
-            // printing file attributes in the desired format
-            printFileStat(path, file, fileStats);
-            // Example: Outputs file name, file type (directory or not), file size
-
             sum += fileStats->st_blocks;
         }
-
         printf("Total %d\n", sum);
+        closedir(drc);
+
+        drc = opendir(directory);
+        while ((file = readdir(drc)) != NULL) {
+            if (file->d_name[0] == '.')
+                continue;
+            char path[PATH_LEN];
+            sprintf(path, "%s/%s", directory, file->d_name);
+            struct stat* fileStats = (struct stat*)malloc(sizeof(struct stat));
+            if (stat(path, fileStats) == -1) {
+                perror("statError");
+                exit(1);
+            }
+            printFileStat(path, file, fileStats);
+        }
+        closedir(drc);
     }
 
     return 0;

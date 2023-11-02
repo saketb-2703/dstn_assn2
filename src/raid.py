@@ -167,11 +167,13 @@ class raid:
     # process disk workloads one at a time, returning final completion time
     def go(self):
         tmax = 0
+        disk = -1
         for d in range(self.numDisks):
             t = self.disks[d].go()
             if t > tmax:
+                disk = d
                 tmax = t
-        return tmax
+        return tmax, disk
 
     # helper functions
     def doSingleRead(self, disk, off, doNewline=False):
@@ -441,7 +443,7 @@ for i in range(options.numRequests):
         r.enqueue(blk, size, False)
 
 # process requests
-t = r.go()
+t, d = r.go()
 
 # print out some final info, if needed
 if options.timing == False:
@@ -453,6 +455,7 @@ if options.solve:
     r.stats(t)
     print('')
     print('STAT totalTime', t)
+    print('STAT maxDisk', d)
     print('')
 else:
     print('')
